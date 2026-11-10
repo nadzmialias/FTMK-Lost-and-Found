@@ -28,7 +28,6 @@ export default function App() {
           <Route path="/track/:referenceCode"element={<TrackStatusPage />} />
           <Route path="/admin/login"element={<AdminLoginPage />}/>
           <Route path="/admin/dashboard"element={<AdminDashboard />}/>
-          <Route path="/items/:itemId" element={<ItemDetailsPage />}/>
         </Routes>
       </div>
 
