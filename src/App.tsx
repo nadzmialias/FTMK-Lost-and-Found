@@ -8,6 +8,7 @@ import BrowseItemsPage from "./pages/BrowseItemsPage";
 import ReportFoundPage from "./pages/ReportFoundPage";
 import ReportLostPage from "./pages/ReportLostPage";
 import TrackStatusPage from "./pages/TrackStatusPage";
+import ItemDetailsPage from "./pages/ItemDetailsPage";
 
 export default function App() {
   return (
@@ -21,6 +22,8 @@ export default function App() {
           <Route path="/report-found" element={<ReportFoundPage />} />
           <Route path="/report-lost" element={<ReportLostPage />} />
           <Route path="/track" element={<TrackStatusPage />} />
+          <Route path="/items/:itemId" element={<ItemDetailsPage />}
+/>
         </Routes>
       </div>
 

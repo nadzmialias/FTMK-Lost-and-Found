@@ -21,3 +21,17 @@ export interface DatabaseItem {
   status: "REPORTED" | "CLAIM_REQUESTED" | "RETURNED";
   created_at: string;
 }
+
+export interface FoundItemDetails extends DatabaseItem {
+  verification_question: string | null;
+}
+
+export interface ClaimSubmissionResponse {
+  success: boolean;
+  message?: string;
+  claim?: {
+    claim_id: string;
+    status: string;
+  };
+  error?: string;
+}
