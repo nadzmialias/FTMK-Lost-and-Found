@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
+import { supabase } from "../services/supabaseClient";
+
 import {
   ArrowLeft,
   ArrowRight,
@@ -70,6 +72,10 @@ export default function ReportFoundPage() {
   );
 
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [referenceCode, setReferenceCode] = useState("");
+  const [managementToken, setManagementToken] = useState("");
 
   const today = new Date();
   const localDate = new Date(
@@ -134,76 +140,215 @@ export default function ReportFoundPage() {
     setImagePreview(null);
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmit = async (
+  e: FormEvent<HTMLFormElement>
+) => {
+  e.preventDefault();
 
-    // Frontend validation only.
-    // Database saving will be implemented in the next phase.
+  if (isSubmitting) return;
 
+  setIsSubmitting(true);
+  setSubmitError("");
+
+  try {
     if (formData.dateFound > localDate) {
-      alert("Date found cannot be in the future.");
-      return;
+      throw new Error(
+        "Date found cannot be in the future."
+      );
     }
 
-    console.log("Validated report data:", {
-      ...formData,
-      verificationAnswer: "[REDACTED]",
-      imageName: image?.name ?? null,
-    });
+    if (formData.itemName.trim().length < 3) {
+      throw new Error(
+        "Item name must contain at least 3 characters."
+      );
+    }
+
+    if (formData.description.trim().length < 10) {
+      throw new Error(
+        "Description must contain at least 10 characters."
+      );
+    }
+
+    if (formData.verificationQuestion.trim().length < 10) {
+      throw new Error(
+        "Verification question must contain at least 10 characters."
+      );
+    }
+
+    if (formData.verificationAnswer.trim().length < 2) {
+      throw new Error(
+        "Verification answer must contain at least 2 characters."
+      );
+    }
+
+    if (image) {
+      throw new Error(
+        "Photo upload is not available yet. Please remove the photo before submitting."
+      );
+    }
+
+    const { data, error } = await supabase.functions.invoke(
+      "submit-found-item",
+      {
+        body: formData,
+      }
+    );
+
+    if (error) {
+      console.error("Supabase Function Error:", error);
+
+      const response = (
+        error as { context?: Response }
+      ).context;
+
+      if (response instanceof Response) {
+        const details = await response
+          .clone()
+          .text()
+          .catch(() => "");
+
+        console.error("HTTP Status:", response.status);
+        console.error("Response Body:", details);
+      }
+
+      throw new Error(
+        `Submission failed: ${error.message}`
+      );
+    }
+
+    if (
+      !data?.success ||
+      !data?.item?.reference_code ||
+      !data?.managementToken
+    ) {
+      throw new Error(
+        data?.error || "Unable to save the report."
+      );
+    }
+
+    setReferenceCode(data.item.reference_code);
+    setManagementToken(data.managementToken);
 
     setSubmitted(true);
-  };
+
+  } catch (err) {
+    setSubmitError(
+      err instanceof Error
+        ? err.message
+        : "An unexpected error occurred."
+    );
+
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const handleReset = () => {
-    setFormData(initialFormData);
-    setImage(null);
-    setImagePreview(null);
-    setSubmitted(false);
-  };
+  setFormData(initialFormData);
+  setImage(null);
+  setImagePreview(null);
+
+  setSubmitted(false);
+  setSubmitError("");
+  setReferenceCode("");
+  setManagementToken("");
+};
 
   if (submitted) {
-    return (
-      <main className="min-h-[80vh] bg-slate-50 px-6 py-20">
-        <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-            <CheckCircle2
-              size={34}
-              className="text-green-600"
-            />
-          </div>
+  const managementLink =
+    `${window.location.origin}/manage/` +
+    `${encodeURIComponent(referenceCode)}` +
+    `#token=${encodeURIComponent(managementToken)}`;
 
-          <h1 className="mt-6 text-2xl font-bold text-slate-900">
-            Form Validation Successful!
-          </h1>
+  return (
+    <main className="min-h-[80vh] bg-slate-50 px-6 py-20">
+      <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
 
-          <p className="mt-3 text-slate-600">
-            Your report has passed the frontend validation.
-            Database submission will be available after
-            Supabase integration.
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+          <CheckCircle2
+            size={34}
+            className="text-green-600"
+          />
+        </div>
+
+        <h1 className="mt-6 text-2xl font-bold text-slate-900">
+          Report Submitted Successfully!
+        </h1>
+
+        <p className="mt-3 text-slate-600">
+          Your found-item report has been saved
+          successfully in our system.
+        </p>
+
+        {/* Reference Code */}
+        <div className="mt-8 rounded-xl border border-blue-100 bg-blue-50 p-6">
+          <p className="text-sm font-medium text-blue-700">
+            Your Reference Code
           </p>
 
-          <div className="mt-6 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
-            This is a development preview.
-            Your report has not been saved yet.
-          </div>
+          <h2 className="mt-3 break-all text-2xl font-bold text-blue-900">
+            {referenceCode}
+          </h2>
 
           <button
-            onClick={handleReset}
-            className="mt-8 w-full rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white transition hover:bg-blue-800"
+            type="button"
+            onClick={() =>
+              navigator.clipboard.writeText(referenceCode)
+            }
+            className="mt-4 rounded-lg bg-white px-5 py-2 text-sm font-semibold text-blue-700"
           >
-            Create Another Report
+            Copy Reference Code
           </button>
-
-          <Link
-            to="/"
-            className="mt-5 block text-sm font-medium text-slate-500 hover:text-blue-700"
-          >
-            Back to Homepage
-          </Link>
         </div>
-      </main>
-    );
-  }
+
+        {/* Management Link */}
+        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5 text-left">
+          <h3 className="font-semibold text-amber-900">
+            Save Your Private Management Link
+          </h3>
+
+          <p className="mt-2 text-sm leading-relaxed text-amber-800">
+            Keep this link private. It will allow you
+            to manage ownership claims when the
+            claim-management module is completed.
+          </p>
+
+          <button
+            type="button"
+            onClick={() =>
+              navigator.clipboard.writeText(managementLink)
+            }
+            className="mt-4 rounded-lg bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900"
+          >
+            Copy Private Link
+          </button>
+        </div>
+
+        <p className="mt-6 text-sm text-slate-500">
+          Current Status:
+          <span className="ml-2 font-semibold text-green-700">
+            REPORTED
+          </span>
+        </p>
+
+        <button
+          type="button"
+          onClick={handleReset}
+          className="mt-8 w-full rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800"
+        >
+          Create Another Report
+        </button>
+
+        <Link
+          to="/"
+          className="mt-5 block text-sm font-medium text-slate-500 hover:text-blue-700"
+        >
+          Back to Homepage
+        </Link>
+      </div>
+    </main>
+  );
+}
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -649,12 +794,30 @@ export default function ReportFoundPage() {
                 </button>
 
                 <button
-                  type="submit"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-7 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
-                >
-                  Validate Report
-                  <ArrowRight size={18} />
-                </button>
+  type="submit"
+  disabled={isSubmitting}
+  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-7 py-3 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+>
+  {isSubmitting ? (
+    <>
+      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+      Submitting...
+    </>
+  ) : (
+    <>
+      Submit Report
+      <ArrowRight size={18} />
+    </>
+  )}
+</button>
+{submitError && (
+  <div
+    role="alert"
+    className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+  >
+    {submitError}
+  </div>
+)}
               </div>
             </section>
           </div>

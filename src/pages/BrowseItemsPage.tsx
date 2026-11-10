@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 
 import {
   Search,
@@ -490,9 +490,12 @@ export default function BrowseItemsPage() {
                       Reference: {item.reference_code}
                     </p>
 
-                    <p className="mt-3 text-sm font-semibold text-blue-700">
-                      View Details & Claim (Coming Soon)
-                    </p>
+                    <Link
+                      to={`/items/${item.item_id}`}
+                      className="mt-3 inline-flex items-center rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+                    >
+                      View Details & Claim
+                    </Link>
                   </div>
                 </div>
               </article>
