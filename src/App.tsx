@@ -23,6 +23,8 @@ export default function App() {
           <Route path="/report-found" element={<ReportFoundPage />} />
           <Route path="/report-lost" element={<ReportLostPage />} />
           <Route path="/track" element={<TrackStatusPage />} />
+          <Route path="/track/:referenceCode"element={<TrackStatusPage />}
+/>
           <Route path="/items/:itemId" element={<ItemDetailsPage />}/>
           <Route path="/manage/:referenceCode" element={<ManageFoundItemPage />}/>
         </Routes>
