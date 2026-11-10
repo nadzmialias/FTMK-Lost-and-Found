@@ -12,25 +12,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import { supabase } from "../services/supabaseClient";
-
-type LostItemForm = {
-  itemName: string;
-  category: string;
-  location: string;
-  dateLost: string;
-  description: string;
-};
-
-type SubmissionResponse = {
-  success: boolean;
-  item?: {
-    reference_code: string;
-    status: string;
-  };
-  managementToken?: string;
-  error?: string;
-};
+import { submitLostReport, type LostReportInput } from "../services/lostReportService";
 
 const categories = [
   "Electronics",
@@ -54,7 +36,7 @@ const locations = [
   "Other Location",
 ];
 
-const initialForm: LostItemForm = {
+const initialForm: LostReportInput = {
   itemName: "",
   category: "",
   location: "",
@@ -79,13 +61,12 @@ const getToday = () => {
 
 export default function ReportLostPage() {
   const [formData, setFormData] =
-    useState<LostItemForm>(initialForm);
+    useState<LostReportInput>(initialForm);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [referenceCode, setReferenceCode] = useState("");
-  const [managementToken, setManagementToken] = useState("");
 
   const today = getToday();
 
@@ -102,77 +83,25 @@ export default function ReportLostPage() {
     }));
   };
 
-  const handleSubmit = async (
-    e: FormEvent<HTMLFormElement>
-  ) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     if (loading) return;
-
     setError("");
-
     if (formData.dateLost > today) {
       setError("Date lost cannot be in the future.");
       return;
     }
-
     if (formData.description.trim().length < 10) {
       setError("Description must contain at least 10 characters.");
       return;
     }
-
     setLoading(true);
-
     try {
-      const { data, error: functionError } =
-        await supabase.functions.invoke<SubmissionResponse>(
-          "submit-lost-item",
-          {
-            body: formData,
-          }
-        );
-
-      if (functionError) {
-  console.error("Supabase Function Error:", functionError);
-
-  const response = (
-    functionError as {
-      context?: Response;
-    }
-  ).context;
-
-  if (response instanceof Response) {
-    const details = await response
-      .clone()
-      .text()
-      .catch(() => "");
-
-    console.error("HTTP Status:", response.status);
-    console.error("Response Body:", details);
-  }
-
-  throw new Error(
-    `Submission failed: ${functionError.message}`
-  );
-}
-
-      if (
-        !data?.success ||
-        !data.item?.reference_code ||
-        !data.managementToken
-      ) {
-        throw new Error(
-          data?.error || "Unable to save the report."
-        );
-      }
-
-      setReferenceCode(data.item.reference_code);
-      setManagementToken(data.managementToken);
+      const result = await submitLostReport(formData);
+      setReferenceCode(result.referenceCode);
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "An unexpected error occurred."
+        err instanceof Error ? err.message : "An unexpected error occurred."
       );
     } finally {
       setLoading(false);
@@ -182,93 +111,83 @@ export default function ReportLostPage() {
   const handleReset = () => {
     setFormData(initialForm);
     setReferenceCode("");
-    setManagementToken("");
     setError("");
   };
 
   // SUCCESS SCREEN
   if (referenceCode) {
-    const privateLink =
-      `${window.location.origin}/manage/` +
-      `${encodeURIComponent(referenceCode)}` +
-      `#token=${encodeURIComponent(managementToken)}`;
-
     return (
       <main className="min-h-[80vh] bg-slate-50 px-6 py-20">
         <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-            <CheckCircle2
-              size={34}
-              className="text-green-600"
-            />
+            <CheckCircle2 size={34} className="text-green-600" />
           </div>
-
           <h1 className="mt-6 text-2xl font-bold text-slate-900">
             Lost Item Reported!
           </h1>
-
           <p className="mt-3 text-slate-500">
             Your lost-item report has been saved successfully.
           </p>
-
           <div className="mt-8 rounded-xl bg-blue-50 p-6">
-            <p className="text-sm font-medium text-blue-700">
-              Your Reference Code
-            </p>
-
+            <p className="text-sm font-medium text-blue-700">Your Reference Code</p>
             <h2 className="mt-3 break-all text-2xl font-bold text-blue-900">
               {referenceCode}
             </h2>
-
+            <p className="mt-3 text-sm text-blue-800">
+              Save this code to track your report status.
+            </p>
             <button
               type="button"
-              onClick={() =>
-                navigator.clipboard.writeText(referenceCode)
-              }
-              className="mt-4 rounded-lg bg-white px-5 py-2 text-sm font-semibold text-blue-700"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(referenceCode);
+                  window.alert("Reference code copied.");
+                } catch {
+                  window.alert("Please select and copy the code manually.");
+                }
+              }}
+              className="mt-4 rounded-lg bg-white px-5 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
             >
               Copy Reference Code
             </button>
           </div>
-
-          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5 text-left">
-            <h3 className="font-semibold text-amber-900">
-              Keep Your Management Link Private
-            </h3>
-
-            <p className="mt-2 text-sm text-amber-800">
-              Save this link to manage your report when the
-              report-management page is implemented.
-              Do not share it publicly.
+          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5 text-left">
+            <h3 className="font-semibold text-slate-900">What Happens Next?</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              Your lost-item report has been recorded.
+              You can browse recently found items to check for a possible match.
             </p>
-
-            <button
-              type="button"
-              onClick={() =>
-                navigator.clipboard.writeText(privateLink)
-              }
-              className="mt-4 rounded-lg bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900"
-            >
-              Copy Private Link
-            </button>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600">
+              If you find a matching item that is available for collection,
+              visit its confirmed collection point. An administrator will verify
+              ownership before handing it over.
+            </p>
           </div>
-
           <p className="mt-6 text-sm text-slate-500">
             Current Status:
-            <span className="ml-2 font-semibold text-green-700">
-              REPORTED
-            </span>
+            <span className="ml-2 font-semibold text-blue-700">REPORTED</span>
           </p>
-
-          <button
-            type="button"
-            onClick={handleReset}
-            className="mt-8 w-full rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800"
-          >
-            Report Another Item
-          </button>
-
+          <div className="mt-8 flex flex-col gap-3">
+            <Link
+              to={`/track/${encodeURIComponent(referenceCode)}`}
+              className="rounded-xl bg-blue-700 px-6 py-3 text-center font-semibold text-white hover:bg-blue-800"
+            >
+              Track Report
+            </Link>
+            <Link
+              to="/browse"
+              className="rounded-xl border border-slate-200 px-6 py-3 text-center font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Browse Found Items
+            </Link>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="px-6 py-3 text-sm font-semibold text-blue-700 hover:text-blue-800"
+            >
+              Report Another Item
+            </button>
+          </div>
           <Link
             to="/"
             className="mt-5 block text-sm text-slate-500 hover:text-blue-700"
