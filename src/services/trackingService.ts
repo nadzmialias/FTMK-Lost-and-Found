@@ -3,12 +3,13 @@ import { supabase } from "./supabaseClient";
 
 export type ItemStatus =
   | "REPORTED"
-  | "CLAIM_REQUESTED"
-  | "RETURNED";
+  | "AVAILABLE_FOR_COLLECTION"
+  | "RETURNED"
+  | "CLAIM_REQUESTED";
 
 export interface TrackedItem {
   reference_code: string;
-  report_type: "LOST" | "FOUND";
+  report_type: "FOUND" | "LOST";
   item_name: string;
   category: string;
   location: string;
@@ -24,67 +25,54 @@ export interface StatusHistory {
   changed_at: string;
 }
 
-interface TrackingResponse {
-  success: boolean;
-  item?: TrackedItem;
-  history?: StatusHistory[];
-  error?: string;
-}
-
 export interface TrackingResult {
   item: TrackedItem;
   history: StatusHistory[];
 }
 
+interface TrackingResponse {
+  success?: boolean;
+  item?: TrackedItem;
+  history?: StatusHistory[];
+  error?: string;
+}
+
 export async function trackItem(
   referenceCode: string
 ): Promise<TrackingResult> {
+  const code = referenceCode.trim().toUpperCase();
+
+  if (!/^FTMK-[FL]-[A-F0-9]{12}$/.test(code)) {
+    throw new Error("Invalid reference code format.");
+  }
+
   const { data, error } =
     await supabase.functions.invoke<TrackingResponse>(
       "track-item",
       {
-        body: {
-          referenceCode:
-            referenceCode.trim().toUpperCase(),
-        },
+        body: { referenceCode: code },
       }
     );
 
   if (error) {
-    const response = (
-      error as { context?: Response }
+    const context = (
+      error as { context?: unknown }
     ).context;
 
-    if (response instanceof Response) {
-      const details = await response
-        .clone()
-        .json()
-        .catch(() => null);
-
-      if (response.status === 404) {
+    if (context instanceof Response) {
+      if (context.status === 404) {
         throw new Error(
-          "Reference code not found. Please check your code."
+          "Reference code not found. Please check the code."
         );
       }
 
-      if (response.status === 400) {
-        throw new Error(
-          "Invalid reference code format."
-        );
+      if (context.status === 400) {
+        throw new Error("Invalid reference code format.");
       }
-
-      console.error(
-        "Tracking function HTTP error:",
-        response.status
-      );
-
-      throw new Error(
-        details?.error ?? "Unable to track item."
-      );
     }
 
     throw new Error(
-      "Unable to connect to the tracking service."
+      "Unable to retrieve tracking information."
     );
   }
 

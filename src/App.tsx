@@ -9,7 +9,8 @@ import ReportFoundPage from "./pages/ReportFoundPage";
 import ReportLostPage from "./pages/ReportLostPage";
 import TrackStatusPage from "./pages/TrackStatusPage";
 import ItemDetailsPage from "./pages/ItemDetailsPage";
-import ManageFoundItemPage from "./pages/ManageFoundItemPage";
+import AdminLoginPage from "./pages/AdminLoginPage";
+import AdminDashboard from "./pages/AdminDashboard";
 
 export default function App() {
   return (
@@ -20,13 +21,14 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/browse" element={<BrowseItemsPage />} />
+          <Route path="/items/:itemId" element={<ItemDetailsPage />}/>
           <Route path="/report-found" element={<ReportFoundPage />} />
           <Route path="/report-lost" element={<ReportLostPage />} />
           <Route path="/track" element={<TrackStatusPage />} />
-          <Route path="/track/:referenceCode"element={<TrackStatusPage />}
-/>
+          <Route path="/track/:referenceCode"element={<TrackStatusPage />} />
+          <Route path="/admin/login"element={<AdminLoginPage />}/>
+          <Route path="/admin/dashboard"element={<AdminDashboard />}/>
           <Route path="/items/:itemId" element={<ItemDetailsPage />}/>
-          <Route path="/manage/:referenceCode" element={<ManageFoundItemPage />}/>
         </Routes>
       </div>
 
