@@ -315,10 +315,16 @@ export default function ReportFoundPage() {
 
           <button
             type="button"
-            onClick={() =>
-              navigator.clipboard.writeText(managementLink)
-            }
-            className="mt-4 rounded-lg bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900"
+            onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(managementLink);
+              alert("Private management link copied successfully!");
+            } catch (error) {
+                console.error("Clipboard copy failed:", error);
+                alert("Unable to copy the link. Please check browser permissions.");
+              }
+            }}
+            className="mt-4 cursor-pointer rounded-lg bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900 transition hover:bg-amber-200"
           >
             Copy Private Link
           </button>

@@ -9,6 +9,7 @@ import ReportFoundPage from "./pages/ReportFoundPage";
 import ReportLostPage from "./pages/ReportLostPage";
 import TrackStatusPage from "./pages/TrackStatusPage";
 import ItemDetailsPage from "./pages/ItemDetailsPage";
+import ManageFoundItemPage from "./pages/ManageFoundItemPage";
 
 export default function App() {
   return (
@@ -22,8 +23,8 @@ export default function App() {
           <Route path="/report-found" element={<ReportFoundPage />} />
           <Route path="/report-lost" element={<ReportLostPage />} />
           <Route path="/track" element={<TrackStatusPage />} />
-          <Route path="/items/:itemId" element={<ItemDetailsPage />}
-/>
+          <Route path="/items/:itemId" element={<ItemDetailsPage />}/>
+          <Route path="/manage/:referenceCode" element={<ManageFoundItemPage />}/>
         </Routes>
       </div>
 
