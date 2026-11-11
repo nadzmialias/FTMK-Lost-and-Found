@@ -1,8 +1,11 @@
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router";
 
 import App from "./App";
+import AdminAuthProvider from "./context/AdminAuthProvider";
+
 import "./index.css";
 
 ReactDOM.createRoot(
@@ -10,7 +13,9 @@ ReactDOM.createRoot(
 ).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <AdminAuthProvider>
+        <App />
+      </AdminAuthProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

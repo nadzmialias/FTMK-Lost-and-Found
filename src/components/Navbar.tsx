@@ -1,9 +1,18 @@
+
 import { useState } from "react";
 import { Link, NavLink } from "react-router";
-import { Menu, X, Search } from "lucide-react";
+import {
+  Menu,
+  X,
+  Search,
+  ShieldCheck,
+} from "lucide-react";
+
+import { useAdminAuth } from "../context/adminAuthContext";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { isAdmin } = useAdminAuth();
 
   const links = [
     { label: "Home", path: "/" },
@@ -14,7 +23,6 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-
         {/* Logo */}
         <Link
           to="/"
@@ -53,6 +61,22 @@ export default function Navbar() {
             </NavLink>
           ))}
 
+          {isAdmin && (
+            <NavLink
+              to="/admin/dashboard"
+              className={({ isActive }) =>
+                `inline-flex items-center gap-2 text-sm font-semibold transition ${
+                  isActive
+                    ? "text-blue-700"
+                    : "text-green-700 hover:text-green-800"
+                }`
+              }
+            >
+              <ShieldCheck size={18} />
+              Admin Dashboard
+            </NavLink>
+          )}
+
           <Link
             to="/report-found"
             className="rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
@@ -66,7 +90,9 @@ export default function Navbar() {
           type="button"
           className="rounded-lg p-2 text-slate-700 md:hidden"
           onClick={() => setMenuOpen(!menuOpen)}
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-label={
+            menuOpen ? "Close menu" : "Open menu"
+          }
           aria-expanded={menuOpen}
         >
           {menuOpen ? <X size={26} /> : <Menu size={26} />}
@@ -87,6 +113,17 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
+
+            {isAdmin && (
+              <Link
+                to="/admin/dashboard"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 text-sm font-semibold text-green-700"
+              >
+                <ShieldCheck size={18} />
+                Admin Dashboard
+              </Link>
+            )}
 
             <Link
               to="/report-found"

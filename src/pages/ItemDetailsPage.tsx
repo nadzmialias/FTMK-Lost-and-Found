@@ -1,6 +1,10 @@
 
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
+
+import { useAdminAuth } from "../context/adminAuthContext";
+import { updateAdminItem } from "../services/adminService";
+
 import {
   ArrowLeft,
   CalendarDays,
@@ -12,6 +16,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+
+
 import {
   getPublicFoundItem,
   type PublicFoundItem,
@@ -19,6 +25,14 @@ import {
 
 export default function ItemDetailsPage() {
   const { itemId } = useParams<{ itemId: string }>();
+
+const { isAdmin } = useAdminAuth();
+
+const [updatingStatus, setUpdatingStatus] =
+  useState(false);
+
+const [adminError, setAdminError] = useState("");
+const [adminMessage, setAdminMessage] = useState("");
 
   const [item, setItem] = useState<PublicFoundItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,6 +75,80 @@ export default function ItemDetailsPage() {
       active = false;
     };
   }, [itemId]);
+
+
+async function handleAdminAction(
+  action: "RECEIVE" | "RETURN"
+) {
+  if (!item || !isAdmin || updatingStatus) {
+    return;
+  }
+
+  // Only allow the appropriate next action.
+  if (
+    action === "RECEIVE" &&
+    item.status !== "REPORTED"
+  ) {
+    return;
+  }
+
+  if (
+    action === "RETURN" &&
+    (
+      item.status !== "AVAILABLE_FOR_COLLECTION" ||
+      !item.received_at
+    )
+  ) {
+    return;
+  }
+
+  const confirmation =
+    action === "RECEIVE"
+      ? `Confirm that "${item.item_name}" has physically arrived at the collection point?`
+      : `Confirm that ownership of "${item.item_name}" has been verified and the item has been handed over?`;
+
+  if (!window.confirm(confirmation)) {
+    return;
+  }
+
+  setUpdatingStatus(true);
+  setAdminError("");
+  setAdminMessage("");
+
+  try {
+    // The Edge Function verifies admin permission
+    // and performs the database status transition.
+    await updateAdminItem(item.item_id, action);
+
+    setAdminMessage(
+      action === "RECEIVE"
+        ? "Item receipt confirmed successfully."
+        : "Item return confirmed successfully."
+    );
+
+    // Reload the public details so the new
+    // status appears without refreshing the page.
+    try {
+      const refreshedItem = await getPublicFoundItem(
+        item.item_id
+      );
+
+      setItem(refreshedItem);
+    } catch {
+      setAdminError(
+        "The status was updated, but the latest item details could not be loaded. Please refresh the page."
+      );
+    }
+  } catch (err) {
+    setAdminError(
+      err instanceof Error
+        ? err.message
+        : "Unable to update item status."
+    );
+  } finally {
+    setUpdatingStatus(false);
+  }
+}
 
   if (loading) {
     return (
@@ -278,6 +366,133 @@ export default function ItemDetailsPage() {
             </div>
           )}
         </section>
+
+
+{/* ADMINISTRATOR CONTROLS */}
+{isAdmin && (
+  <section className="mt-8 rounded-2xl border border-green-200 bg-white p-7 shadow-sm">
+    <div className="flex items-center gap-3">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-50">
+        <ShieldCheck
+          size={24}
+          className="text-green-700"
+        />
+      </div>
+
+      <div>
+        <h2 className="text-xl font-bold text-slate-900">
+          Administrator Controls
+        </h2>
+
+        <p className="mt-1 text-sm text-slate-500">
+          Manage the physical receipt and return
+          of this item.
+        </p>
+      </div>
+    </div>
+
+    <div className="mt-6 rounded-xl bg-slate-50 p-5">
+      <p className="text-sm text-slate-500">
+        Current Item Status
+      </p>
+
+      <p className="mt-1 font-semibold text-slate-900">
+        {item.status === "AVAILABLE_FOR_COLLECTION"
+          ? "Available for Collection"
+          : item.status === "RETURNED"
+            ? "Returned"
+            : item.status === "CLAIM_REQUESTED"
+              ? "Legacy Claim Status"
+              : "Reported"}
+      </p>
+    </div>
+
+    {adminError && (
+      <div
+        role="alert"
+        className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+      >
+        {adminError}
+      </div>
+    )}
+
+    {adminMessage && (
+      <div
+        role="status"
+        className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700"
+      >
+        {adminMessage}
+      </div>
+    )}
+
+    {item.status === "REPORTED" && (
+      <div className="mt-6">
+        <p className="mb-4 text-sm text-slate-600">
+          Confirm that the physical item has arrived
+          at the selected collection point.
+        </p>
+
+        <button
+          type="button"
+          disabled={updatingStatus}
+          onClick={() => {
+            void handleAdminAction("RECEIVE");
+          }}
+          className="w-full rounded-xl bg-green-700 px-6 py-3 font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {updatingStatus
+            ? "Updating..."
+            : "Confirm Item Received"}
+        </button>
+      </div>
+    )}
+
+    {item.status === "AVAILABLE_FOR_COLLECTION" &&
+      Boolean(item.received_at) && (
+        <div className="mt-6">
+          <p className="mb-4 text-sm text-slate-600">
+            Only confirm return after verifying the
+            owner's identity and physically handing
+            over the item.
+          </p>
+
+          <button
+            type="button"
+            disabled={updatingStatus}
+            onClick={() => {
+              void handleAdminAction("RETURN");
+            }}
+            className="w-full rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {updatingStatus
+              ? "Updating..."
+              : "Confirm Item Returned"}
+          </button>
+        </div>
+      )}
+
+    {item.status === "RETURNED" && (
+      <div className="mt-6 rounded-xl bg-green-50 p-4 text-sm font-medium text-green-800">
+        This item has been returned successfully.
+        No further action is available.
+      </div>
+    )}
+
+    {item.status === "CLAIM_REQUESTED" && (
+      <div className="mt-6 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
+        This is a legacy claim record.
+        No status action is available here.
+      </div>
+    )}
+
+    <Link
+      to="/admin/dashboard"
+      className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:underline"
+    >
+      Go to Admin Dashboard
+    </Link>
+  </section>
+)}
 
         <section className="mt-7 rounded-xl border border-blue-100 bg-blue-50 p-5">
           <div className="flex items-center gap-2 font-semibold text-blue-900">
