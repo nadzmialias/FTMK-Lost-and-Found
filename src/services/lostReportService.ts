@@ -13,13 +13,11 @@ export interface LostReportInput {
 
 export interface LostReportResult {
   success: boolean;
-  referenceCode: string;
   status: "REPORTED";
 }
 
 interface LostReportApiResponse {
   success?: boolean;
-  referenceCode?: string;
   status?: string;
   error?: string;
 }
@@ -63,7 +61,6 @@ export async function submitLostReport(
 
   if (
     !data?.success ||
-    !data.referenceCode ||
     data.status !== "REPORTED"
   ) {
     throw new Error(
@@ -74,7 +71,6 @@ export async function submitLostReport(
 
   return {
     success: true,
-    referenceCode: data.referenceCode,
     status: "REPORTED",
   };
 }
