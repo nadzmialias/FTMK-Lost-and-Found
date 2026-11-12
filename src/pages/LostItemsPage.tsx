@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import {
   CalendarDays,
-  Mail,
+  Check,
+  Copy,
   MapPin,
-  Phone,
   PackageSearch,
   Search,
 } from "lucide-react";
@@ -15,32 +15,13 @@ import {
   type PublicLostItem,
 } from "../services/publicLostItemService";
 
-// Automatically identify email or phone number
-function isEmail(contact: string): boolean {
-  return contact.includes("@");
-}
-
-// Generate the correct contact link
-function contactLink(item: PublicLostItem): string {
-  const contact = item.contact_detail.trim();
-
-  if (isEmail(contact)) {
-    return `mailto:${contact}?subject=${encodeURIComponent(
-      `Found item: ${item.item_name}`
-    )}`;
-  }
-
-  const phone = contact.replace(/[^\d+]/g, "");
-
-  return `tel:${phone}`;
-}
-
 export default function LostItemsPage() {
   const [items, setItems] = useState<PublicLostItem[]>([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -213,10 +194,6 @@ export default function LostItemsPage() {
         {!loading && !error && (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filteredItems.map((item) => {
-              const email = isEmail(
-                item.contact_detail
-              );
-
               return (
                 <article
                   key={item.item_id}
@@ -257,24 +234,33 @@ export default function LostItemsPage() {
                       Public Owner Contact
                     </p>
 
-                    <a
-                      href={contactLink(item)}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800"
-                    >
-                      {email ? (
-                        <Mail size={17} />
-                      ) : (
-                        <Phone size={17} />
-                      )}
-
-                      {email
-                        ? "Email Owner"
-                        : "Call Owner"}
-                    </a>
-
-                    <p className="mt-3 break-all text-xs text-slate-500">
-                      {item.contact_detail}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={item.contact_detail}
+                        onFocus={(e) => e.target.select()}
+                        aria-label={`Owner contact for ${item.item_name}`}
+                        className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700"
+                      />
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(item.contact_detail);
+                            setCopiedId(item.item_id);
+                          } catch {
+                            setCopiedId(null);
+                            window.alert("Unable to copy automatically. Select the contact detail to copy it manually.");
+                          }
+                        }}
+                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-blue-700 hover:bg-slate-50"
+                        aria-label={`Copy contact for ${item.item_name}`}
+                      >
+                        {copiedId === item.item_id ? <Check size={16} /> : <Copy size={16} />}
+                        {copiedId === item.item_id ? "Copied" : "Copy"}
+                      </button>
+                    </div>
                   </div>
                 </article>
               );
