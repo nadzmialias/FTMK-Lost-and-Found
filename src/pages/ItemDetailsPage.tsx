@@ -304,9 +304,11 @@ async function handleAdminAction(
 
           <div className="mt-6 rounded-xl bg-slate-50 p-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              {isAvailable
-                ? "Confirmed Collection Point"
-                : "Intended Collection Point"}
+              {isReturned
+                ? "Collection Point"
+                : isAvailable
+                  ? "Confirmed Collection Point"
+                  : "Intended Collection Point"}
             </p>
 
             <p className="mt-2 text-lg font-bold text-slate-900">

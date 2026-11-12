@@ -295,9 +295,11 @@ useEffect(() => {
               {/* COLLECTION POINT */}
               <div className="mt-4 rounded-xl bg-slate-50 p-3">
                 <p className="text-xs font-medium text-slate-500">
-                  {available
-                    ? "Confirmed Collection Point"
-                    : "Intended Collection Point"}
+                  {returned
+                    ? "Collection Point"
+                    : available
+                      ? "Confirmed Collection Point"
+                      : "Intended Collection Point"}
                 </p>
 
                 <p className="mt-1 text-sm font-semibold text-slate-800">
@@ -305,7 +307,15 @@ useEffect(() => {
                     "Not assigned"}
                 </p>
 
-                {!available && !returned && (
+                {returned ? (
+                  <p className="mt-1 text-xs font-medium text-green-700">
+                    Already returned to owner
+                  </p>
+                ) : available ? (
+                  <p className="mt-1 text-xs font-medium text-green-700">
+                    Ready for collection
+                  </p>
+                ) : (
                   <p className="mt-1 text-xs text-amber-700">
                     Not confirmed ready for collection
                   </p>
