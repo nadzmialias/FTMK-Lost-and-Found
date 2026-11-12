@@ -110,12 +110,12 @@ useEffect(() => {
             </Link>
 
             <Link
-              to="/report-found"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-7 py-4 font-semibold text-slate-800 transition hover:bg-slate-100"
-            >
-              <ClipboardPlus size={20} />
-              I Found Something
-            </Link>
+  to="/lost-items"
+  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-7 py-4 font-semibold text-slate-800 transition hover:bg-slate-100"
+>
+  <ClipboardPlus size={20} />
+  I Found Something
+</Link>
           </div>
 
           {/* Search Bar */}

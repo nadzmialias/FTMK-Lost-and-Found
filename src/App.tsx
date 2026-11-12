@@ -11,6 +11,7 @@ import TrackStatusPage from "./pages/TrackStatusPage";
 import ItemDetailsPage from "./pages/ItemDetailsPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import LostItemsPage from "./pages/LostItemsPage";
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/track/:referenceCode"element={<TrackStatusPage />} />
           <Route path="/admin/login"element={<AdminLoginPage />}/>
           <Route path="/admin/dashboard"element={<AdminDashboard />}/>
+          <Route path="/lost-items" element={<LostItemsPage />} />
         </Routes>
       </div>
 

@@ -25,23 +25,14 @@ const categories = [
   "Others",
 ];
 
-const locations = [
-  "FTMK Computer Lab",
-  "FTMK Lecture Hall",
-  "FTMK Cafeteria",
-  "FTMK Library",
-  "FTMK Lobby",
-  "FTMK Corridor",
-  "FTMK Parking Area",
-  "Other Location",
-];
-
 const initialForm: LostReportInput = {
   itemName: "",
   category: "",
   location: "",
   dateLost: "",
   description: "",
+  contactDetail: "",
+  publicContactConsent: false,
 };
 
 const inputStyle =
@@ -359,25 +350,29 @@ export default function ReportLostPage() {
                     htmlFor="location"
                     className="mb-2 block text-sm font-medium"
                   >
-                    Last Seen Location *
                   </label>
 
-                  <select
-                    id="location"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    required
-                    className={inputStyle}
-                  >
-                    <option value="">Select location</option>
+                  <div>
+  <label
+    htmlFor="location"
+    className="mb-2 block text-sm font-medium"
+  >
+    Last Seen Location *
+  </label>
 
-                    {locations.map((value) => (
-                      <option key={value} value={value}>
-                        {value}
-                      </option>
-                    ))}
-                  </select>
+  <input
+    id="location"
+    name="location"
+    type="text"
+    value={formData.location}
+    onChange={handleChange}
+    required
+    minLength={3}
+    maxLength={120}
+    placeholder="e.g. FTMK Computer Lab"
+    className={inputStyle}
+  />
+</div>
                 </div>
 
                 <div>
@@ -402,6 +397,78 @@ export default function ReportLostPage() {
                 </div>
               </div>
             </section>
+
+
+{/* PUBLIC CONTACT DETAILS */}
+<section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
+  <h2 className="text-lg font-semibold text-slate-900">
+    Public Lost Item Listing
+  </h2>
+
+  <p className="mt-2 text-sm text-slate-500">
+    Your lost-item report will appear in the public
+    Lost Items directory so other students can
+    help you find your belongings.
+  </p>
+
+  {/* CONTACT DETAIL */}
+  <div className="mt-6">
+    <label
+      htmlFor="contactDetail"
+      className="mb-2 block text-sm font-medium text-slate-900"
+    >
+      Contact Detail *
+    </label>
+
+    <input
+      id="contactDetail"
+      name="contactDetail"
+      type="text"
+      value={formData.contactDetail}
+      onChange={handleChange}
+      required
+      maxLength={120}
+      placeholder="Email address or phone number"
+      className={inputStyle}
+    />
+
+    <p className="mt-2 text-xs text-slate-500">
+      Example: student@gmail.com or +60123456789
+    </p>
+  </div>
+
+  {/* PUBLIC CONTACT CONSENT */}
+  <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
+    <label className="flex items-start gap-3">
+      <input
+        type="checkbox"
+        checked={formData.publicContactConsent}
+        onChange={(e) =>
+          setFormData((previous) => ({
+            ...previous,
+            publicContactConsent: e.target.checked,
+          }))
+        }
+        required
+        className="mt-1 h-4 w-4 shrink-0 accent-blue-700"
+      />
+
+      <span className="text-sm leading-relaxed text-amber-900">
+        I understand and agree that my lost-item
+        report and contact details will be publicly
+        visible so someone who finds my item can
+        contact me directly.
+      </span>
+    </label>
+
+    <p className="mt-3 text-xs leading-relaxed text-amber-800">
+      Only provide contact information that belongs
+      to you. Anyone visiting the directory may
+      view or copy these details.
+    </p>
+  </div>
+</section>
+
 
             {/* SUBMISSION */}
             <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">

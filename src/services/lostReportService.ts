@@ -1,3 +1,4 @@
+
 import { supabase } from "./supabaseClient";
 
 export interface LostReportInput {
@@ -6,6 +7,8 @@ export interface LostReportInput {
   location: string;
   dateLost: string;
   description: string;
+  contactDetail: string;
+  publicContactConsent: boolean;
 }
 
 export interface LostReportResult {
@@ -26,14 +29,19 @@ export async function submitLostReport(
 ): Promise<LostReportResult> {
   const { data, error } =
     await supabase.functions.invoke<LostReportApiResponse>(
-      "submit-lost-item-v2",
-      { body: input }
+      "submit-lost-item-v3",
+      {
+        body: input,
+      }
     );
 
   if (error) {
     let message = "Unable to submit lost-item report.";
 
-    const context = (error as { context?: unknown }).context;
+    const context = (
+      error as { context?: unknown }
+    ).context;
+
     if (context instanceof Response) {
       const response: unknown = await context
         .clone()
@@ -49,6 +57,7 @@ export async function submitLostReport(
         message = response.error;
       }
     }
+
     throw new Error(message);
   }
 
@@ -58,7 +67,8 @@ export async function submitLostReport(
     data.status !== "REPORTED"
   ) {
     throw new Error(
-      data?.error ?? "Report submission was not confirmed."
+      data?.error ??
+        "Report submission was not confirmed."
     );
   }
 

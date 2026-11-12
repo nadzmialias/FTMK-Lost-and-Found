@@ -17,6 +17,7 @@ export default function Navbar() {
   const links = [
     { label: "Home", path: "/" },
     { label: "Browse Items", path: "/browse" },
+    { label: "Lost Items", path: "/lost-items" },
     { label: "Track Status", path: "/track" },
   ];
 
