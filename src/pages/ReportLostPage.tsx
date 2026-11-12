@@ -57,7 +57,7 @@ export default function ReportLostPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [referenceCode, setReferenceCode] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
   const today = getToday();
 
@@ -88,8 +88,8 @@ export default function ReportLostPage() {
     }
     setLoading(true);
     try {
-      const result = await submitLostReport(formData);
-      setReferenceCode(result.referenceCode);
+      await submitLostReport(formData);
+      setSubmitted(true);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "An unexpected error occurred."
@@ -101,12 +101,12 @@ export default function ReportLostPage() {
 
   const handleReset = () => {
     setFormData(initialForm);
-    setReferenceCode("");
+    setSubmitted(false);
     setError("");
   };
 
   // SUCCESS SCREEN
-  if (referenceCode) {
+  if (submitted) {
     return (
       <main className="min-h-[80vh] bg-slate-50 px-6 py-20">
         <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
@@ -117,31 +117,8 @@ export default function ReportLostPage() {
             Lost Item Reported!
           </h1>
           <p className="mt-3 text-slate-500">
-            Your lost-item report has been saved successfully.
+            Your lost-item report has been saved successfully. You can view it in the Lost Items directory.
           </p>
-          <div className="mt-8 rounded-xl bg-blue-50 p-6">
-            <p className="text-sm font-medium text-blue-700">Your Reference Code</p>
-            <h2 className="mt-3 break-all text-2xl font-bold text-blue-900">
-              {referenceCode}
-            </h2>
-            <p className="mt-3 text-sm text-blue-800">
-              Save this code to track your report status.
-            </p>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(referenceCode);
-                  window.alert("Reference code copied.");
-                } catch {
-                  window.alert("Please select and copy the code manually.");
-                }
-              }}
-              className="mt-4 rounded-lg bg-white px-5 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
-            >
-              Copy Reference Code
-            </button>
-          </div>
           <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5 text-left">
             <h3 className="font-semibold text-slate-900">What Happens Next?</h3>
             <p className="mt-2 text-sm leading-relaxed text-slate-600">
@@ -154,16 +131,12 @@ export default function ReportLostPage() {
               ownership before handing it over.
             </p>
           </div>
-          <p className="mt-6 text-sm text-slate-500">
-            Current Status:
-            <span className="ml-2 font-semibold text-blue-700">REPORTED</span>
-          </p>
           <div className="mt-8 flex flex-col gap-3">
             <Link
-              to={`/track/${encodeURIComponent(referenceCode)}`}
+              to="/lost-items"
               className="rounded-xl bg-blue-700 px-6 py-3 text-center font-semibold text-white hover:bg-blue-800"
             >
-              Track Report
+              View Lost Items
             </Link>
             <Link
               to="/browse"
@@ -478,8 +451,8 @@ export default function ReportLostPage() {
 
               <p className="mt-2 text-sm text-slate-500">
                 Check your details before submitting.
-                A reference code will be generated after
-                your report is saved successfully.
+                Your report will appear in the public Lost Items
+                directory after it is saved.
               </p>
 
               {error && (
