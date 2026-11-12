@@ -259,24 +259,35 @@ export default function BrowseItemsPage() {
                     Found at {item.location}
                   </p>
 
-                  <div className="mt-4 rounded-xl bg-slate-50 p-3">
-                    <p className="text-xs font-medium text-slate-500">
-                      {available
-                        ? "Confirmed Collection Point"
-                        : "Intended Collection Point"}
-                    </p>
+                  
+<div className="mt-4 rounded-xl bg-slate-50 p-3">
+  <p className="text-xs font-medium text-slate-500">
+    {item.status === "RETURNED"
+      ? "Collection Point"
+      : available
+        ? "Confirmed Collection Point"
+        : "Intended Collection Point"}
+  </p>
 
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
-                      {item.collection_point?.point_name ??
-                        "Not assigned"}
-                    </p>
+  <p className="mt-1 text-sm font-semibold text-slate-900">
+    {item.collection_point?.point_name ?? "Not assigned"}
+  </p>
 
-                    {!available && (
-                      <p className="mt-1 text-xs text-amber-700">
-                        Not confirmed ready for collection
-                      </p>
-                    )}
-                  </div>
+  {item.status === "RETURNED" ? (
+    <p className="mt-1 text-xs font-medium text-green-700">
+      Already returned to owner
+    </p>
+  ) : available ? (
+    <p className="mt-1 text-xs font-medium text-green-700">
+      Ready for collection
+    </p>
+  ) : (
+    <p className="mt-1 text-xs text-amber-700">
+      Not confirmed ready for collection
+    </p>
+  )}
+</div>
+
 
                   <Link
                     to={`/items/${item.item_id}`}
