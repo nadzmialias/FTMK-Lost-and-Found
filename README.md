@@ -172,7 +172,7 @@ Administrator permissions are verified on the backend.
 The current dashboard focuses on Found Item management.
 
 
-### 6 Collection Points
+## 6. Collection Points
 
 The prototype supports the following collection points:
 
